@@ -1,0 +1,128 @@
+#!/bin/bash
+#
+#  vboxinit: auto start sessions when booting and save
+#                sessions when host is stopped
+#
+#  Based on vboxtool. Rewrtitten/modified  for OpenSuSE by jetchisel.
+#
+# NOTE:
+# copy this script to /etc/init.d
+# uncomment "var $startStopConfig = true;" in phpvirtualbox's php.ini
+# uncomment "var $enableAdvancedConfig = true;" in phpvirtualbox's php.ini
+# Configure vms in phpvirtualbox's graphical menu for statupmode = automatic
+# 
+#  run:
+#      chmod u+rx /etc/init.d/vboxinit
+#      #for Debian update-rc.d vboxinit defaults
+#      for SuSE   chkconfig vboxinit on
+#  
+#
+# For testing the script run: 
+# /etc/init.d/vboxinit {start|stop|restart|status}
+# 
+# TODO: add to runlevel 6
+# 
+### BEGIN INIT INFO
+# Provides:          vboxinit
+# Required-Start:    vboxdrv $local_fs
+# Required-Stop:     vboxdrv $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Description:       Controls VirtualBox sessions
+### END INIT INFO
+
+
+shopt -s nocasematch
+
+
+# Check if script is run from terminal, if yes then print to screen else print to logfile.
+if [[ ! -t 1 ]]; then
+  exec >> /var/log/vboxinit.log 2>&1
+fi
+
+# source /etc/default/virtualbox 
+. /etc/default/virtualbox
+
+# check for defined VBOXWEB_USER in /etc/default/virtualbox
+if [[ ! ${VBOXWEB_USER}  ]]; then
+  echo "No \${VBOXWEB_USER} defined. Define and source it from /etc/default/virtualbox." >&2
+  exit 1
+fi
+
+# check if virtualbox is installed if not exit with an error.
+if ! type -P VirtualBox >/dev/null 2>&1; then
+  echo "VirtualBox is either not installed or is not in your PATH." >&2
+  exit 1
+fi  
+
+
+# ************************************************************************************************************ #
+#                                                                                                              #
+# Implementation of user control, execute several commands as another (predefined) user                        #
+# Rewritten from $su_command from the original vboxinit which uses a variable. Here it is a function instead.  #
+#                                                                                                              #
+# ************************************************************************************************************ #
+
+su_command() { 
+  su - "${VBOXWEB_USER}" -s /bin/bash -c "$@"
+}
+
+
+start() {
+  # Get all autostart machines
+  local machines uuid vmname startup
+  machines=($(su_command "awk -F'[{}]' '{ print \$2 }' < <(VBoxManage list vms)")) 
+  
+  for uuid in "${machines[@]}"; do
+    startup=$(su_command "awk '{ print \$NF }' < <(VBoxManage getextradata "$uuid" 'pvbx/startupMode')")
+    if [[ ${startup} = auto ]]; then
+      vmname=$(su_command "awk '/^Name:/ {print \$NF}' < <(VBoxManage showvminfo "$uuid")")
+      printf "\n%s\n" "$(date) ${0##*/}: starting machine ${vmname} ..."
+      su_command "VBoxManage startvm $uuid --type headless" 
+    fi
+  done
+} 
+
+
+stop() {
+  local machines uuid vmname
+  # vms are saved, instead of stopped.
+  machines=($(su_command "awk -F'[{}]' '{ print \$2 }' < <(VBoxManage list runningvms)"))
+  
+  for uuid in "${machines[@]}"; do
+    vmname=$(su_command "awk '/^Name:/ {print \$NF}' < <(VBoxManage showvminfo "$uuid")")
+    printf "\n%s\n" "$(date) ${0##*/}: saving machine ${vmname} state ..."
+    su_command "VBoxManage controlvm $uuid savestate" 
+  done
+} 
+
+status() {
+  su_command "VBoxManage list runningvms" 
+}
+
+restart() {
+  stop
+  start
+}
+
+# Check for a command line option
+case "$1" in
+    start)
+          start
+             ;;
+     stop)
+         stop
+           ;;
+   status)
+         status 
+            ;;
+  restart)
+         restart
+            ;;
+        *)
+     echo "Usage: ${0##*/} {start|stop|restart|status}"
+     exit 1
+            ;;
+esac
+
+exit 0
