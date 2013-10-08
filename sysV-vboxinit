@@ -117,7 +117,7 @@ start() {
   for uuid in "${machines[@]}"; do
     startup=$(su_command "awk '{ print \$NF }' < <(VBoxManage getextradata "$uuid" 'pvbx/startupMode')")
     if [[ ${startup} = auto ]]; then
-      vmname=$(su_command "awk '/^Name:/ {print \$NF}' < <(VBoxManage showvminfo "$uuid")")
+      vmname=$(su_command "awk '/^Name/ && NF==2{print \$2}' < <(VBoxManage showvminfo "$uuid")") 
       printf "\n%s\n" "$(date) ${0##*/}: starting machine ${vmname} ..."
       su_command "VBoxManage startvm $uuid --type headless" 
     fi
@@ -137,7 +137,7 @@ stop() {
   machines=($(su_command "awk -F'[{}]' '{ print \$2 }' < <(VBoxManage list runningvms)"))
   
   for uuid in "${machines[@]}"; do
-    vmname=$(su_command "awk '/^Name:/ {print \$NF}' < <(VBoxManage showvminfo "$uuid")")
+    vmname=$(su_command "awk '/^Name/ && NF==2{print \$2}' < <(VBoxManage showvminfo "$uuid")") 
     printf "\n%s\n" "$(date) ${0##*/}: saving machine ${vmname} state ..."
     su_command "VBoxManage controlvm $uuid savestate" 
   done
