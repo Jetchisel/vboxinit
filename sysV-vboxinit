@@ -1,26 +1,5 @@
 #!/bin/bash
 #
-#  vboxinit: auto start sessions when booting and save
-#                sessions when host is stopped
-#
-#  Based on vboxtool. Rewrtitten/modified  for OpenSuSE by jetchisel.
-#
-# NOTE:
-# copy this script to /etc/init.d
-# uncomment "var $startStopConfig = true;" in phpvirtualbox's php.ini
-# Configure vms in phpvirtualbox's graphical menu for statupmode = automatic
-# 
-#  run:
-#      chmod u+rx /etc/init.d/vboxinit
-#      #for Debian update-rc.d vboxinit defaults
-#      for SuSE   chkconfig vboxinit on
-#  
-#
-# For testing the script run: 
-# /etc/init.d/vboxinit {start|stop|restart|status}
-# 
-# 
-# 
 ### BEGIN INIT INFO
 # Provides:          vboxinit
 # Required-Start:    vboxdrv $local_fs
