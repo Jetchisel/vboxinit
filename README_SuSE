@@ -1,5 +1,4 @@
 
-
   vboxinit: auto start sessions when booting and save
                 sessions when host is stopped
 
@@ -7,18 +6,33 @@
 
  
  copy this script to /etc/init.d
+ 
+ ----
  uncomment "var $startStopConfig = true;" in phpvirtualbox's php.ini
+ 
+ ----
  Configure vms in phpvirtualbox's graphical menu for statupmode = automatic
  
-  run:
-      chmod u+rx /etc/init.d/vboxinit
-      #for Debian update-rc.d vboxinit defaults
-      for SuSE   chkconfig vboxinit on
+ Settings --> General --> Basic --> "StartupMode --> Automatic"
+
+----  
+ Set permissions
+ 
+ chmod u+rx /etc/init.d/vboxinit
+ 
+---- 
+ Enable at boot time      
+ 
+ chkconfig vboxinit on
   
+----
 
  For testing the script as root run:  
+
  /etc/init.d/vboxinit {start|stop|restart|status}
- 
- Note the script runs the vms as a normal user that is defined in /etc/default/virtualbox 
+
+---- 
+ NOTE:
+      the script runs the vms as a normal user that is defined in /etc/default/virtualbox 
       and belongs to the vboxusers group so you will not worry about running the script as
       root.
