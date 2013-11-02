@@ -6,7 +6,8 @@ sysV-vboxinit
   vboxinit: auto start sessions when booting and save
    sessions when host is stopped
 
-  Based on vboxtool. Rewritten/modified  for OpenSuSE by jetchisel.
+  From the phpvirtualbox project and it is based on vboxtool.
+  Rewritten/modified  for OpenSuSE by jetchisel.
   
  
  copy this script to /etc/init.d
